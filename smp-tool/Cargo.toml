@@ -1,0 +1,23 @@
+[package]
+name = "smp-tool"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["Sascha Zenglein <zenglein@gessler.de>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+mcumgr-smp = { path = "../mcumgr-smp" }
+
+clap = { version = "4.4", features = ["derive"] }
+reedline = "0.26.0"
+regex = "1.10.2"
+sha2 = "0.10.8"
+
+serialport = "4.2.2"
+
+serde = "1.0.193"
+
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
