@@ -1,3 +1,13 @@
-.idea
+\.idea
+
+# Generated files
+*.pdf
+*.svg
+
+# Cargo build system
 /target
 
+# Nix
+result
+result-*
+.pre-commit-config.yaml
