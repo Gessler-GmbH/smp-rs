@@ -61,7 +61,7 @@ impl AsyncSMPTransport for AsyncUDPTransport {
     }
 
     #[inline]
-    fn set_timeout(&mut self, timeout: Option<std::time::Duration>) -> Result {
+    fn set_recv_timeout(&mut self, timeout: Option<std::time::Duration>) -> Result {
         self.timeout = timeout;
         Ok(())
     }

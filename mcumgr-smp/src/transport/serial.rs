@@ -44,7 +44,7 @@ impl<P: SerialPort + io::AsyncRead + io::AsyncWrite + Unpin> AsyncSMPTransport
         Ok(resp)
     }
 
-    fn set_timeout(&mut self, timeout: Option<Duration>) -> Result {
+    fn set_recv_timeout(&mut self, timeout: Option<Duration>) -> Result {
         let timeout = timeout.unwrap_or(Duration::MAX);
 
         self.port.set_timeout(timeout)?;
