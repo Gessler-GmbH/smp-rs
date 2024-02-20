@@ -12,6 +12,7 @@
 /// Implementation of a general [SMPFrame] that can have any payload.
 pub mod smp;
 
+#[cfg(feature = "transport")]
 pub mod transport;
 
 #[cfg(feature = "payload-cbor")]

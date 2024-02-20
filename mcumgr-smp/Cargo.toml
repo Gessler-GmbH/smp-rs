@@ -28,7 +28,10 @@ tokio-serial = { version = "5.4", optional = true }
 tokio = { version = "1.21", optional = true }
 
 [features]
-default = ["serial", "payload-cbor", "transport-serial"]
+default = ["serial", "payload-cbor", "transports"]
 serial = ["base64", "crc", ]
 payload-cbor = ["serde", "serde_bytes", "ciborium"]
-transport-serial = [ "serial", "dep:tokio-serial", "dep:tokio", "tokio/io-util" ]
+transport = [ ]
+transports = [ "transport-serial", "transport-udp" ]
+transport-serial = [ "transport", "serial", "dep:tokio-serial", "dep:tokio", "tokio/io-util" ]
+transport-udp = [ "transport", "tokio/net", "tokio/time" ]

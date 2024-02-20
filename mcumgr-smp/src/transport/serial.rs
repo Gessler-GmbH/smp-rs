@@ -1,3 +1,5 @@
+//! Serial Transport layer implementation.
+
 use std::time::Duration;
 
 use tokio::io::{self, AsyncBufReadExt, AsyncWriteExt};
@@ -7,13 +9,13 @@ use crate::smp_framing;
 
 use super::{AsyncSMPTransport, Result};
 
-pub struct SerialTransport<P: SerialPort> {
+pub struct AsyncSerialTransport<P: SerialPort> {
     port: P,
     buf: Vec<u8>,
 }
 
 impl<P: SerialPort + io::AsyncRead + io::AsyncWrite + Unpin> AsyncSMPTransport
-    for SerialTransport<P>
+    for AsyncSerialTransport<P>
 {
     async fn send(&mut self, frame: &[u8]) -> Result {
         let mut encoder = smp_framing::SMPTransportEncoder::new(&frame);
