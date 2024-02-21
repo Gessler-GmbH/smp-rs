@@ -7,7 +7,6 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use clap::{Parser, Subcommand, ValueEnum};
-use mcumgr_smp::transport::udp::AsyncUDPTransport;
 use mcumgr_smp::transport::AsyncCBORSMPTransport;
 use mcumgr_smp::{
     application_management, application_management::GetImageStateResult,
@@ -23,7 +22,9 @@ pub mod shell;
 
 #[derive(ValueEnum, Copy, Clone, Debug)]
 pub enum Transport {
+    #[cfg(feature = "transport-serial")]
     Serial,
+    #[cfg(feature = "transport-udp")]
     UDP,
 }
 
@@ -113,6 +114,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let cli: Cli = Cli::parse();
 
     let transport: Box<dyn mcumgr_smp::transport::AsyncSMPTransport + Unpin> = match cli.transport {
+        #[cfg(feature = "transport-serial")]
         Transport::Serial => {
             let serial = mcumgr_smp::transport::serial::AsyncSerialTransport::open(
                 cli.serial_device.expect("serial device is expected"),
@@ -120,13 +122,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
             )?;
             Box::new(serial)
         }
+        #[cfg(feature = "transport-udp")]
         Transport::UDP => {
             let host = cli.dest_host.expect("dest_host required");
             let port = cli.udp_port;
 
             debug!("connecting to {} at port {}", host, port);
 
-            let udp = AsyncUDPTransport::new((host, port)).await?;
+            let udp = mcumgr_smp::transport::udp::AsyncUDPTransport::new((host, port)).await?;
             Box::new(udp)
         }
     };

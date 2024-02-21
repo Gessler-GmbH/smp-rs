@@ -6,9 +6,13 @@ license = "MIT OR Apache-2.0"
 authors = ["Sascha Zenglein <zenglein@gessler.de>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+default = [ "transport-serial", "transport-udp" ]
+transport-serial = [ "mcumgr-smp/transport-serial" ]
+transport-udp = [ "mcumgr-smp/transport-udp" ]
 
 [dependencies]
-mcumgr-smp = { path = "../mcumgr-smp" }
+mcumgr-smp = { path = "../mcumgr-smp", features = [ "transport" ] }
 
 tokio = { version = "1.21", features = [ "rt-multi-thread", "macros" ] }
 
