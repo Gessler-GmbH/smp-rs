@@ -10,6 +10,8 @@ authors = ["Sascha Zenglein <zenglein@gessler.de>"]
 [dependencies]
 mcumgr-smp = { path = "../mcumgr-smp" }
 
+tokio = { version = "1.21", features = [ "rt-multi-thread", "macros" ] }
+
 clap = { version = "4.4", features = ["derive"] }
 reedline = "0.26.0"
 regex = "1.10.2"
