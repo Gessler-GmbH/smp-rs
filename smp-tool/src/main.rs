@@ -141,7 +141,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
-    transport.recv_timeout(Some(Duration::from_millis(cli.timeout_ms)))?;
+    //transport.set_recv_timeout(Some(Duration::from_millis(cli.timeout_ms)))?;
 
     match cli.command {
         Commands::Os(OsCmd::Echo { msg }) => {

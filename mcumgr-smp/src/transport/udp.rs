@@ -1,5 +1,7 @@
 //! UDP transport layer implementation.
 
+use core::future::Future;
+use core::pin::Pin;
 use std::{io, net::Ipv6Addr};
 
 use super::{AsyncSMPTransport, Result};
@@ -7,7 +9,6 @@ use super::{AsyncSMPTransport, Result};
 pub struct AsyncUDPTransport {
     socket: tokio::net::UdpSocket,
     buf: Vec<u8>,
-    timeout: Option<std::time::Duration>,
 }
 
 impl AsyncUDPTransport {
@@ -29,40 +30,27 @@ impl AsyncUDPTransport {
         let mut buf = Vec::with_capacity(mtu);
         buf.resize(mtu, 0);
 
-        Ok(Self {
-            socket,
-            buf,
-            timeout: None,
-        })
+        Ok(Self { socket, buf })
     }
 }
 
 impl AsyncSMPTransport for AsyncUDPTransport {
-    #[inline]
-    async fn send(&mut self, frame: &[u8]) -> Result {
-        self.socket.send(&frame).await?;
-        Ok(())
+    fn poll_send(
+        self: core::pin::Pin<&mut Self>,
+        cx: &mut core::task::Context<'_>,
+        frame: &[u8],
+    ) -> core::task::Poll<Result> {
+        let me = self.get_mut();
+        core::task::ready!(Pin::new(&mut me.socket).poll_send(cx, &frame))?;
+        core::task::Poll::Ready(Ok(()))
     }
 
-    async fn receive(&mut self) -> Result<Vec<u8>> {
-        let timeout = self.timeout.clone();
-        let future = self.socket.recv(&mut self.buf);
-        let len = if let Some(timeout) = timeout {
-            tokio::time::timeout(timeout, future).await.map_err(|_| {
-                super::Error::Io(io::Error::new(
-                    io::ErrorKind::TimedOut,
-                    "Time out while receiving udp frame",
-                ))
-            })?
-        } else {
-            future.await
-        }?;
-        Ok(Vec::from(&self.buf[..len]))
-    }
-
-    #[inline]
-    fn set_recv_timeout(&mut self, timeout: Option<std::time::Duration>) -> Result {
-        self.timeout = timeout;
-        Ok(())
+    fn poll_receive(
+        self: core::pin::Pin<&mut Self>,
+        cx: &mut core::task::Context<'_>,
+    ) -> core::task::Poll<Result<Vec<u8>>> {
+        let me = self.get_mut();
+        let len = core::task::ready!(core::pin::pin!(me.socket.recv(&mut me.buf)).poll(cx))?;
+        core::task::Poll::Ready(Ok(Vec::from(&me.buf[..len])))
     }
 }
