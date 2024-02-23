@@ -18,6 +18,9 @@ pub mod serial;
 #[cfg(feature = "transport-udp")]
 pub mod udp;
 
+#[cfg(feature = "transport-ble")]
+pub mod ble;
+
 /// Async Transport layer trait.
 pub trait AsyncSMPTransport {
     /// Send a single frame.
