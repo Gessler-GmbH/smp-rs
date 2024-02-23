@@ -2,7 +2,7 @@
 // Copyright (c) 2023 Gessler GmbH.
 
 use base64::engine::general_purpose;
-use base64::{EncodeSliceError, Engine};
+use base64::Engine;
 use crc::Crc;
 use std::cmp::min;
 use thiserror::Error;
@@ -22,6 +22,8 @@ pub enum SMPTransportError {
     CRCError,
     #[error("base64 decoding error: {0}")]
     Base64DecodeError(#[from] base64::DecodeError),
+    #[error("base64 encoding error: {0}")]
+    Base64EncodeError(#[from] base64::EncodeSliceError),
 }
 
 pub struct SMPTransportDecoder {
@@ -124,7 +126,7 @@ impl<'a> SMPTransportEncoder<'a> {
 
     /// Write the next line for the given payload to the supplied buffer.   
     /// returns an error if out_buf is smaller than 127 bytes
-    pub fn write_line(&mut self, out_buf: &mut [u8]) -> Result<usize, EncodeSliceError> {
+    pub fn write_line(&mut self, out_buf: &mut [u8]) -> Result<usize, SMPTransportError> {
         // max 127 with header and newline in base64 encoding
         const MAX_RAW_BODY_LEN: usize = 93; // 124.0 / 4.0 * 3.0 as usize;
         let mut base64_payload = Vec::with_capacity(MAX_RAW_BODY_LEN);
