@@ -22,7 +22,9 @@ jobs:
         with:
           components: clippy
       - uses: actions/checkout@v2
-      - run: cargo clippy --all-targets --all-features -- -D clippy::all
+      - run: |
+            sudo apt update && sudo apt install libdbus-1-dev pkg-config
+            cargo clippy --all-targets --all-features -- -D clippy::all
 
   compile:
     needs: [codestyle, lint]
