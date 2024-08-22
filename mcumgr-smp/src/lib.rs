@@ -19,8 +19,11 @@ pub mod os_management;
 #[cfg(feature = "payload-cbor")]
 pub mod shell_management;
 
+/// Implementations over Serial, BLE and UDP transports
+pub mod transport;
+
 /// Support for the [SMP text console transport](https://github.com/apache/mynewt-mcumgr/blob/master/transport/smp-console.md)
-#[cfg(feature = "serial")]
+#[cfg(feature = "transport-serial")]
 pub mod smp_framing;
 
 pub use smp::*;

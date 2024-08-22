@@ -8,26 +8,29 @@ use std::time::Duration;
 
 use clap::{Parser, Subcommand, ValueEnum};
 use mcumgr_smp::{
-    application_management, application_management::GetImageStateResult,
-    application_management::WriteImageChunkResult, os_management, os_management::EchoResult,
-    shell_management, shell_management::ShellResult, SMPFrame,
+    application_management::{self, GetImageStateResult, WriteImageChunkResult},
+    os_management::{self, EchoResult},
+    shell_management::{self, ShellResult},
+    smp::SMPFrame,
+    transport::{
+        ble::BleTransport,
+        serial::SerialTransport,
+        smp::{CborSmpTransport, CborSmpTransportAsync},
+        udp::UdpTransportAsync,
+    },
 };
 use sha2::Digest;
 use tracing::debug;
 use tracing_subscriber::prelude::*;
 
-use crate::transport::serial::SerialTransport;
-use crate::transport::udp::UdpTransport;
-use crate::transport::CborSMPTransport;
-
 /// interactive shell support
 pub mod shell;
-pub mod transport;
 
 #[derive(ValueEnum, Copy, Clone, Debug)]
 pub enum Transport {
     Serial,
-    UDP,
+    Udp,
+    Ble,
 }
 
 #[derive(Parser, Debug)]
@@ -56,6 +59,9 @@ struct Cli {
 
     #[arg(long, default_value = "5000")]
     timeout_ms: u64,
+
+    #[arg(short, long, required_if_eq("transport", "ble"))]
+    name: Option<String>,
 
     #[command(subcommand)]
     command: Commands,
@@ -106,7 +112,13 @@ enum ApplicationCmd {
     },
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+pub enum UsedTransport {
+    SyncTransport(CborSmpTransport),
+    AsyncTransport(CborSmpTransportAsync),
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "".into()))
         .with(tracing_subscriber::fmt::layer())
@@ -115,38 +127,37 @@ fn main() -> Result<(), Box<dyn Error>> {
     let cli: Cli = Cli::parse();
 
     let mut transport = match cli.transport {
-        Transport::Serial => {
-            let serial = serialport::new(
+        Transport::Serial => UsedTransport::SyncTransport(CborSmpTransport {
+            transport: Box::new(SerialTransport::new(
                 cli.serial_device.expect("serial device required"),
                 cli.serial_baud,
-            )
-            .open_native()?;
-
-            CborSMPTransport {
-                transport: Box::new(SerialTransport {
-                    serial_device: Box::new(serial),
-                    buf: vec![0u8; 128],
-                }),
-            }
-        }
-        Transport::UDP => {
+                cli.timeout_ms,
+            )?),
+        }),
+        Transport::Udp => {
             let host = cli.dest_host.expect("dest_host required");
             let port = cli.udp_port;
 
             debug!("connecting to {} at port {}", host, port);
 
-            CborSMPTransport {
-                transport: Box::new(UdpTransport::new((host, port))?),
-            }
+            UsedTransport::AsyncTransport(CborSmpTransportAsync {
+                transport: Box::new(UdpTransportAsync::new((host, port)).await?),
+            })
         }
+        Transport::Ble => UsedTransport::AsyncTransport(CborSmpTransportAsync {
+            transport: Box::new(
+                BleTransport::new(cli.name.unwrap(), Duration::from_millis(cli.timeout_ms)).await?,
+            ),
+        }),
     };
-
-    transport.recv_timeout(Some(Duration::from_millis(cli.timeout_ms)))?;
 
     match cli.command {
         Commands::Os(OsCmd::Echo { msg }) => {
-            let ret: SMPFrame<EchoResult> =
-                transport.transceive_cbor(os_management::echo(42, msg))?;
+            let frame = os_management::echo(42, msg);
+            let ret: SMPFrame<EchoResult> = match transport {
+                UsedTransport::SyncTransport(ref mut t) => t.transceive_cbor(frame),
+                UsedTransport::AsyncTransport(ref mut t) => t.transceive_cbor(frame).await,
+            }?;
             debug!("{:?}", ret);
 
             match ret.data {
@@ -159,8 +170,11 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         }
         Commands::Shell(ShellCmd::Exec { cmd }) => {
-            let ret: SMPFrame<ShellResult> =
-                transport.transceive_cbor(shell_management::shell_command(42, cmd))?;
+            let frame = shell_management::shell_command(42, cmd);
+            let ret: SMPFrame<ShellResult> = match transport {
+                UsedTransport::SyncTransport(ref mut t) => t.transceive_cbor(frame),
+                UsedTransport::AsyncTransport(ref mut t) => t.transceive_cbor(frame).await,
+            }?;
             debug!("{:?}", ret);
 
             match ret.data {
@@ -173,7 +187,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         }
         Commands::Shell(ShellCmd::Interactive) => {
-            shell::shell(&mut transport)?;
+            shell::shell(&mut transport).await?;
         }
         Commands::App(ApplicationCmd::Flash {
             slot,
@@ -201,8 +215,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                 let frame = updater.write_chunk(chunk);
 
-                let resp_frame: SMPFrame<WriteImageChunkResult> =
-                    transport.transceive_cbor(frame)?;
+                let resp_frame: SMPFrame<WriteImageChunkResult> = match transport {
+                    UsedTransport::SyncTransport(ref mut t) => t.transceive_cbor(frame),
+                    UsedTransport::AsyncTransport(ref mut t) => t.transceive_cbor(frame).await,
+                }?;
 
                 match resp_frame.data {
                     WriteImageChunkResult::Ok(payload) => {
@@ -218,8 +234,11 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("sent all bytes: {}", offset);
         }
         Commands::App(ApplicationCmd::Info) => {
-            let ret: SMPFrame<GetImageStateResult> =
-                transport.transceive_cbor(application_management::get_state(42))?;
+            let frame = application_management::get_state(42);
+            let ret: SMPFrame<GetImageStateResult> = match transport {
+                UsedTransport::SyncTransport(ref mut t) => t.transceive_cbor(frame),
+                UsedTransport::AsyncTransport(ref mut t) => t.transceive_cbor(frame).await,
+            }?;
             debug!("{:?}", ret);
 
             match ret.data {
