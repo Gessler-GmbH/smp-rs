@@ -2,11 +2,10 @@
 // Copyright (c) 2023 Gessler GmbH.
 
 use crate::transport::error::Error;
+use crate::transport::smp::SmpTransport;
 use std::io;
 use std::net::{Ipv6Addr, SocketAddr, ToSocketAddrs, UdpSocket};
 use std::time::Duration;
-
-use crate::transport::smp::SmpTransport;
 
 pub struct UdpTransport {
     socket: UdpSocket,

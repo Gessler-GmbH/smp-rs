@@ -1,0 +1,43 @@
+name: build
+
+on: push
+
+jobs:
+  codestyle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Rust
+        uses: hecrj/setup-rust-action@v2
+        with:
+          components: rustfmt
+          rust-version: stable
+      - uses: actions/checkout@v2
+      - run: cargo fmt --all -- --check
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Rust
+        uses: hecrj/setup-rust-action@v2
+        with:
+          components: clippy
+      - uses: actions/checkout@v2
+      - run: cargo clippy --all-targets --all-features -- -D clippy::all
+
+  compile:
+    needs: [codestyle, lint]
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+        rust: [stable]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Setup Rust
+        uses: hecrj/setup-rust-action@v2
+        with:
+          rust-version: ${{ matrix.rust }}
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: check
+        run: cargo check --all

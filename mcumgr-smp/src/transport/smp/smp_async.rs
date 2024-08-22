@@ -1,5 +1,5 @@
-use crate::transport::error::Error;
 use crate::smp::SMPFrame;
+use crate::transport::error::Error;
 use async_trait::async_trait;
 
 #[async_trait]

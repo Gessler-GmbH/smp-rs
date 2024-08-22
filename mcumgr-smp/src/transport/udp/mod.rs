@@ -4,6 +4,6 @@ pub mod udp_async;
 pub use udp_async::UdpTransportAsync;
 
 #[cfg(feature = "transport-udp")]
-pub mod udp;
+pub mod udp_sync;
 #[cfg(feature = "transport-udp")]
-pub use udp::UdpTransport;
+pub use udp_sync::UdpTransport;

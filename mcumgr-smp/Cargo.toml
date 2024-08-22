@@ -27,7 +27,7 @@ uuid = {version = "1.10", optional = true}
 
 [features]
 async = ["tokio", "async-trait"]
-default = ["transport-serial", "payload-cbor"]
+default = ["transport-ble-async", "transport-serial", "transport-udp-async", "payload-cbor"]
 payload-cbor = ["serde", "serde_bytes", "ciborium"]
 transport-ble-async = ["uuid", "btleplug", "async", "futures"]
 transport-serial = ["base64", "crc", "serialport"]
