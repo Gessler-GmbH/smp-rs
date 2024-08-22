@@ -41,7 +41,8 @@ jobs:
           rust-version: ${{ matrix.rust }}
       - name: Checkout
         uses: actions/checkout@v4
-        if: ${{ matrix.os }} == 'ubuntu-latest'
-      - run: sudo apt update && sudo apt install libdbus-1-dev libudev-dev pkg-config
+      - name: deps
+        if: ${{ matrix.os == 'ubuntu-latest'}}
+        run: sudo apt update && sudo apt install libdbus-1-dev libudev-dev pkg-config
       - name: check
         run: cargo check --all
