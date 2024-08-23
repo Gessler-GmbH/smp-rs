@@ -1,12 +1,12 @@
 // Author: Sascha Zenglein <zenglein@gessler.de>
 // Copyright (c) 2023 Gessler GmbH.
 
+use super::smp::SmpTransport;
 use crate::smp_framing;
 use crate::transport::error::Error;
 use serialport::SerialPort;
 use std::io::{BufRead, BufReader};
 use std::time::Duration;
-use super::smp::SmpTransport;
 
 pub struct SerialTransport {
     serial_device: Box<dyn SerialPort>,
