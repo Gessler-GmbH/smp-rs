@@ -1,4 +1,4 @@
-use crate::smp::SMPFrame;
+use crate::smp::SmpFrame;
 use crate::transport::error::Error;
 
 pub trait SmpTransport {
@@ -26,20 +26,20 @@ impl CborSmpTransport {
         self.transport.receive()
     }
 
-    pub fn send_cbor<T: serde::Serialize>(&mut self, frame: SMPFrame<T>) -> Result<(), Error> {
+    pub fn send_cbor<T: serde::Serialize>(&mut self, frame: SmpFrame<T>) -> Result<(), Error> {
         let bytes = frame.encode_with_cbor();
         self.send(bytes)
     }
-    pub fn receive_cbor<T: serde::de::DeserializeOwned>(&mut self) -> Result<SMPFrame<T>, Error> {
+    pub fn receive_cbor<T: serde::de::DeserializeOwned>(&mut self) -> Result<SmpFrame<T>, Error> {
         let bytes = self.receive()?;
-        let frame = SMPFrame::<T>::decode_with_cbor(&bytes)?;
+        let frame = SmpFrame::<T>::decode_with_cbor(&bytes)?;
         Ok(frame)
     }
 
     pub fn transceive_cbor<Req: serde::Serialize, Resp: serde::de::DeserializeOwned>(
         &mut self,
-        frame: SMPFrame<Req>,
-    ) -> Result<SMPFrame<Resp>, Error> {
+        frame: SmpFrame<Req>,
+    ) -> Result<SmpFrame<Resp>, Error> {
         self.send_cbor(frame)?;
         self.receive_cbor()
     }

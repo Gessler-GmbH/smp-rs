@@ -11,7 +11,7 @@ use mcumgr_smp::{
     application_management::{self, GetImageStateResult, WriteImageChunkResult},
     os_management::{self, EchoResult},
     shell_management::{self, ShellResult},
-    smp::SMPFrame,
+    smp::SmpFrame,
     transport::{
         ble::BleTransport,
         serial::SerialTransport,
@@ -154,7 +154,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     match cli.command {
         Commands::Os(OsCmd::Echo { msg }) => {
             let frame = os_management::echo(42, msg);
-            let ret: SMPFrame<EchoResult> = match transport {
+            let ret: SmpFrame<EchoResult> = match transport {
                 UsedTransport::SyncTransport(ref mut t) => t.transceive_cbor(frame),
                 UsedTransport::AsyncTransport(ref mut t) => t.transceive_cbor(frame).await,
             }?;
@@ -171,7 +171,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Commands::Shell(ShellCmd::Exec { cmd }) => {
             let frame = shell_management::shell_command(42, cmd);
-            let ret: SMPFrame<ShellResult> = match transport {
+            let ret: SmpFrame<ShellResult> = match transport {
                 UsedTransport::SyncTransport(ref mut t) => t.transceive_cbor(frame),
                 UsedTransport::AsyncTransport(ref mut t) => t.transceive_cbor(frame).await,
             }?;
@@ -215,7 +215,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
                 let frame = updater.write_chunk(chunk);
 
-                let resp_frame: SMPFrame<WriteImageChunkResult> = match transport {
+                let resp_frame: SmpFrame<WriteImageChunkResult> = match transport {
                     UsedTransport::SyncTransport(ref mut t) => t.transceive_cbor(frame),
                     UsedTransport::AsyncTransport(ref mut t) => t.transceive_cbor(frame).await,
                 }?;
@@ -235,7 +235,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Commands::App(ApplicationCmd::Info) => {
             let frame = application_management::get_state(42);
-            let ret: SMPFrame<GetImageStateResult> = match transport {
+            let ret: SmpFrame<GetImageStateResult> = match transport {
                 UsedTransport::SyncTransport(ref mut t) => t.transceive_cbor(frame),
                 UsedTransport::AsyncTransport(ref mut t) => t.transceive_cbor(frame).await,
             }?;

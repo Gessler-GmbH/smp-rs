@@ -10,7 +10,7 @@ use tracing::debug;
 
 use mcumgr_smp::{
     shell_management::{self, ShellResult},
-    smp::SMPFrame,
+    smp::SmpFrame,
 };
 
 use crate::UsedTransport;
@@ -35,7 +35,7 @@ pub async fn shell(transport: &mut UsedTransport) -> Result<(), Box<dyn Error>> 
 
                 let frame = shell_management::shell_command(42, argv);
 
-                let ret: Result<SMPFrame<ShellResult>, _> = match transport {
+                let ret: Result<SmpFrame<ShellResult>, _> = match transport {
                     UsedTransport::SyncTransport(t) => t.transceive_cbor(frame),
                     UsedTransport::AsyncTransport(t) => t.transceive_cbor(frame).await,
                 };

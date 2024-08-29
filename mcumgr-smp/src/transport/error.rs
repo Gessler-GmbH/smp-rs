@@ -3,7 +3,7 @@ pub enum Error {
     #[error("Io: {0}")]
     Io(#[from] std::io::Error),
     #[error("SMP: {0}")]
-    Smp(#[from] crate::smp::SMPError),
+    Smp(#[from] crate::smp::SmpError),
     #[cfg(feature = "transport-serial")]
     #[error("SmpTransport: {0}")]
     SmpTransport(#[from] crate::smp_framing::SmpTransportError),

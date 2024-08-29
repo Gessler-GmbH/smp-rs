@@ -1,6 +1,6 @@
 // Author: Sascha Zenglein <zenglein@gessler.de>
 // Copyright (c) 2023 Gessler GmbH.
-use crate::{Group, SMPFrame};
+use crate::{Group, SmpFrame};
 
 use crate::OpCode::{ReadRequest, WriteRequest};
 use serde::{Deserialize, Serialize};
@@ -10,9 +10,9 @@ pub struct EchoRequest {
     pub d: String,
 }
 
-pub fn echo(sequence: u8, msg: String) -> SMPFrame<EchoRequest> {
+pub fn echo(sequence: u8, msg: String) -> SmpFrame<EchoRequest> {
     let payload = EchoRequest { d: msg };
-    SMPFrame::new(WriteRequest, sequence, Group::Default, 0, payload)
+    SmpFrame::new(WriteRequest, sequence, Group::Default, 0, payload)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -27,10 +27,10 @@ pub struct GetInfoRequest {
     pub format: String,
 }
 
-pub fn get_info(sequence: u8, format: String) -> SMPFrame<GetInfoRequest> {
+pub fn get_info(sequence: u8, format: String) -> SmpFrame<GetInfoRequest> {
     let request = GetInfoRequest { format };
 
-    SMPFrame::new(ReadRequest, sequence, Group::Default, 7, request)
+    SmpFrame::new(ReadRequest, sequence, Group::Default, 7, request)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -45,8 +45,8 @@ pub struct ResetRequest {
     pub force: u8,
 }
 
-pub fn reset(sequence: u8, force: bool) -> SMPFrame<ResetRequest> {
+pub fn reset(sequence: u8, force: bool) -> SmpFrame<ResetRequest> {
     let payload = ResetRequest { force: force as u8 };
 
-    SMPFrame::new(WriteRequest, sequence, Group::Default, 5, payload)
+    SmpFrame::new(WriteRequest, sequence, Group::Default, 5, payload)
 }

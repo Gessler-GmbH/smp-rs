@@ -9,7 +9,7 @@
 //! Apart from [smp_framing], messages are encoded and decoded from and to raw byte buffers.
 //! You must provide your own transport implementation.
 
-/// Implementation of a general [SMPFrame] that can have any payload.
+/// Implementation of a general [SmpFrame] that can have any payload.
 pub mod smp;
 
 #[cfg(feature = "payload-cbor")]
