@@ -61,7 +61,7 @@ struct Cli {
     timeout_ms: u64,
 
     #[arg(short, long, required_if_eq("transport", "ble"))]
-    name: String,
+    name: Option<String>,
 
     #[command(subcommand)]
     command: Commands,
@@ -164,7 +164,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let adapter = adapters.first().ok_or("BLE adapters not found")?;
             UsedTransport::AsyncTransport(CborSmpTransportAsync {
                 transport: Box::new(
-                    BleTransport::new(cli.name, adapter, Duration::from_millis(cli.timeout_ms))
+                    BleTransport::new(cli.name.unwrap(), adapter, Duration::from_millis(cli.timeout_ms))
                         .await?,
                 ),
             })
