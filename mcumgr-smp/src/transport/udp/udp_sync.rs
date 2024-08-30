@@ -13,17 +13,18 @@ pub struct UdpTransport {
 }
 
 impl UdpTransport {
-    pub fn new<A: ToSocketAddrs>(
-        target: A,
-        recv_timeout: Option<Duration>,
-    ) -> Result<Self, io::Error> {
+    pub fn new<A: ToSocketAddrs>(target: A) -> Result<Self, io::Error> {
         let socket = UdpSocket::bind(SocketAddr::new(Ipv6Addr::UNSPECIFIED.into(), 0))?;
         socket.connect(target)?;
-        socket.set_read_timeout(recv_timeout)?;
 
         let buf = vec![0; 1500];
 
         Ok(Self { socket, buf })
+    }
+
+    pub fn recv_timeout(&mut self, timeout: Option<Duration>) -> Result<(), Error> {
+        self.socket.set_read_timeout(timeout)?;
+        Ok(())
     }
 }
 

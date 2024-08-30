@@ -33,12 +33,9 @@ pub async fn shell(transport: &mut UsedTransport) -> Result<(), Box<dyn Error>> 
             Signal::Success(buffer) => 'succ: {
                 let argv: Vec<_> = buffer.split_whitespace().map(|s| s.to_owned()).collect();
 
-                let frame = shell_management::shell_command(42, argv);
-
-                let ret: Result<SmpFrame<ShellResult>, _> = match transport {
-                    UsedTransport::SyncTransport(t) => t.transceive_cbor(frame),
-                    UsedTransport::AsyncTransport(t) => t.transceive_cbor(frame).await,
-                };
+                let ret: Result<SmpFrame<ShellResult>, _> = transport
+                    .transceive_cbor(shell_management::shell_command(42, argv))
+                    .await;
                 debug!("{:?}", ret);
 
                 let data = match ret {

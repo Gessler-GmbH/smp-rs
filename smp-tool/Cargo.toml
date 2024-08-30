@@ -13,8 +13,8 @@ mcumgr-smp = {path = "../mcumgr-smp", features = ["transport-ble-async", "transp
 clap = {version = "4.5", features = ["derive"]}
 reedline = "0.33"
 regex = "1.10"
-serde = "1.0"
+serde = {version = "1.0", features = ["derive"]}
 sha2 = "0.10"
-tokio = {version = "1.39", features = ["macros", "net", "rt-multi-thread"]}
+tokio = {version = "1.39", features = ["macros", "net", "rt"]}
 tracing = "0.1"
 tracing-subscriber = {version = "0.3", features = ["env-filter"]}

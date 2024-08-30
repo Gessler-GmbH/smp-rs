@@ -14,19 +14,19 @@ pub struct SerialTransport {
 }
 
 impl SerialTransport {
-    pub fn new(
-        port: String,
-        baud_rate: u32,
-        recv_timeout: u64,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
-        let serial = serialport::new(port, baud_rate)
-            .timeout(Duration::from_millis(recv_timeout))
-            .open_native()?;
+    pub fn new(port: String, baud_rate: u32) -> Result<Self, Box<dyn std::error::Error>> {
+        let serial = serialport::new(port, baud_rate).open_native()?;
         let buf = vec![0; 128];
         Ok(Self {
             serial_device: Box::new(serial),
             buf,
         })
+    }
+
+    pub fn recv_timeout(&mut self, timeout: Option<Duration>) -> Result<(), Error> {
+        self.serial_device
+            .set_timeout(timeout.unwrap_or(Duration::MAX))
+            .map_err(|e| Error::Io(e.into()))
     }
 }
 
