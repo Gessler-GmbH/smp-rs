@@ -164,8 +164,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let adapter = adapters.first().ok_or("BLE adapters not found")?;
             UsedTransport::AsyncTransport(CborSmpTransportAsync {
                 transport: Box::new(
-                    BleTransport::new(cli.name.unwrap(), adapter, Duration::from_millis(cli.timeout_ms))
-                        .await?,
+                    BleTransport::new(
+                        cli.name.unwrap(),
+                        adapter,
+                        Duration::from_millis(cli.timeout_ms),
+                    )
+                    .await?,
                 ),
             })
         }
