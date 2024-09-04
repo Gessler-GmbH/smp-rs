@@ -1,14 +1,14 @@
 # mcumgr-smp
-An implementation of the 
-[SMP protocol](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_protocol.html).  
+An implementation of the
+[SMP protocol](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_protocol.html).
 
 This library defines the SMP message format and methods to encode and decode bytes.
 
 Additionally, common request and response objects with a CBOR payload for groups
-Application Management, OS Management, and Shell Management are provided.  
+Application Management, OS Management, and Shell Management are provided.
 Feel free to contribute additional message definitions.
 
-**Custom messages are fully supported by creating SMPFrames manually.
+**Custom messages are fully supported by creating SmpFrames manually.
 You can even use a payload encoding other than CBOR.**
 
 By default it include all available transport. If you don't need them all, disable default features

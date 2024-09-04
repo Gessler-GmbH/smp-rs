@@ -2,7 +2,7 @@
 // Copyright (c) 2023 Gessler GmbH.
 
 use super::smp::SmpTransport;
-use crate::smp_framing;
+use super::smp_framing;
 use crate::transport::error::Error;
 use serialport::SerialPort;
 use std::io::{BufRead, BufReader};

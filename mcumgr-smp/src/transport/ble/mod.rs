@@ -20,11 +20,20 @@ pub struct BleTransport {
 }
 
 impl BleTransport {
+    /// Scan host system for BLE adapters. User should decide which one should be used.
+    /// Usually there will be the only one, so you can take the first.
+    /// Will return empty vec if there is no BLE.
+    /// Will return multiple instances in case when device have internal adapter and
+    /// additional one, connected by USB or UART.
     pub async fn adapters() -> Result<Vec<Adapter>, Error> {
         let manager = Manager::new().await?;
         manager.adapters().await.map_err(Error::BLE)
     }
 
+    /// Starts listening advertizing packets for selected duration.
+    /// After that allows to find peripheral device by advertized name.
+    /// Unfortunatelly, MacOS and iOS doesn't allow access to BD-addresses
+    /// of peripheral devices, so name filtering is the only way.
     pub async fn new(
         name: String,
         adapter: &Adapter,
@@ -66,6 +75,10 @@ impl BleTransport {
         })
     }
 
+    /// A bit more flexible than new()
+    /// Allows user to perform scan with additional parameters,
+    /// implemented by himself. For example - Scan filtering by the list of
+    /// advertized services.
     pub async fn from_peripheral(device: Peripheral) -> Result<Self, Error> {
         device.connect().await?;
         device.discover_services().await?;
@@ -102,13 +115,14 @@ impl SmpTransportAsync for BleTransport {
 
     async fn receive(&mut self) -> Result<Vec<u8>, Error> {
         loop {
-            if let Some(res) = self
-                .notifications
-                .next()
-                .await
-                .filter(|notif| notif.uuid == SMP_CHAR)
-            {
-                return Ok(res.value);
+            match self.notifications.next().await {
+                Some(res) if res.uuid == SMP_CHAR => return Ok(res.value),
+                Some(_) => continue,
+                None => {
+                    return Err(Error::BLE(btleplug::Error::RuntimeError(String::from(
+                        "Notification stream error",
+                    ))));
+                }
             }
         }
     }

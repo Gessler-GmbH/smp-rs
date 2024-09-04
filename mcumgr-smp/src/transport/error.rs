@@ -6,7 +6,7 @@ pub enum Error {
     Smp(#[from] crate::smp::SmpError),
     #[cfg(feature = "transport-serial")]
     #[error("SmpTransport: {0}")]
-    SmpTransport(#[from] crate::smp_framing::SmpTransportError),
+    SmpTransport(#[from] super::smp_framing::SmpTransportError),
     #[cfg(feature = "transport-ble-async")]
     #[error("Bluetooth transport: {0}")]
     BLE(#[from] btleplug::Error),

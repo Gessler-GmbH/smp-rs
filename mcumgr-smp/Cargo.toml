@@ -1,15 +1,15 @@
 [package]
-authors = ["Sascha Zenglein <zenglein@gessler.de>"]
-categories = ["embedded", "development-tools"]
-description = "An implementation of the smp protocol for microcontrollers in pure rust."
-edition = "2021"
-homepage = "https://github.com/Gessler-GmbH/smp-rs"
-keywords = ["smp", "zephyr", "rtos", "mcumgr"]
-license = "MIT OR Apache-2.0"
 name = "mcumgr-smp"
+version = "0.7.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["Sascha Zenglein <zenglein@gessler.de>"]
+description = "An implementation of the smp protocol for microcontrollers in pure rust."
 readme = "README.md"
 repository = "https://github.com/Gessler-GmbH/smp-rs"
-version = "0.7.0"
+homepage = "https://github.com/Gessler-GmbH/smp-rs"
+categories = ["embedded", "development-tools"]
+keywords = ["smp", "zephyr", "rtos", "mcumgr"]
 
 [dependencies]
 async-trait = {version = "0.1", optional = true}
