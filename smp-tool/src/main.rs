@@ -161,7 +161,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Transport::Ble => {
             let adapters = BleTransport::adapters().await?;
+            debug!("found {} adapter(s): {:?}:", adapters.len(), adapters);
             let adapter = adapters.first().ok_or("BLE adapters not found")?;
+            debug!("selecting first adapter: {:?}:", adapter);
             UsedTransport::AsyncTransport(CborSmpTransportAsync {
                 transport: Box::new(
                     BleTransport::new(
