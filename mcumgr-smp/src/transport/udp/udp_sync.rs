@@ -1,12 +1,11 @@
 // Author: Sascha Zenglein <zenglein@gessler.de>
 // Copyright (c) 2023 Gessler GmbH.
 
-use std::error::Error;
+use crate::transport::error::Error;
+use crate::transport::smp::SmpTransport;
 use std::io;
 use std::net::{Ipv6Addr, SocketAddr, ToSocketAddrs, UdpSocket};
 use std::time::Duration;
-
-use crate::transport::SMPTransport;
 
 pub struct UdpTransport {
     socket: UdpSocket,
@@ -22,22 +21,22 @@ impl UdpTransport {
 
         Ok(Self { socket, buf })
     }
+
+    pub fn recv_timeout(&mut self, timeout: Option<Duration>) -> Result<(), Error> {
+        self.socket.set_read_timeout(timeout)?;
+        Ok(())
+    }
 }
 
-impl SMPTransport for UdpTransport {
-    fn send(&mut self, frame: Vec<u8>) -> Result<(), Box<dyn Error>> {
+impl SmpTransport for UdpTransport {
+    fn send(&mut self, frame: Vec<u8>) -> Result<(), Error> {
         self.socket.send(&frame)?;
         Ok(())
     }
 
-    fn receive(&mut self) -> Result<Vec<u8>, Box<dyn Error>> {
+    fn receive(&mut self) -> Result<Vec<u8>, Error> {
         let len = self.socket.recv(&mut self.buf)?;
 
         Ok(Vec::from(&self.buf[0..len]))
-    }
-
-    fn recv_timeout(&mut self, timeout: Option<Duration>) -> Result<(), Box<dyn Error>> {
-        self.socket.set_read_timeout(timeout)?;
-        Ok(())
     }
 }

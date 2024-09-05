@@ -5,13 +5,12 @@ use base64::engine::general_purpose;
 use base64::{EncodeSliceError, Engine};
 use crc::Crc;
 use std::cmp::min;
-use thiserror::Error;
 
 /// there are multiple possible CRC implementations. This matches the results from mcumgr
 const CALC_CRC: Crc<u16> = crc::Crc::<u16>::new(&crc::CRC_16_XMODEM);
 
-#[derive(Error, Debug)]
-pub enum SMPTransportError {
+#[derive(thiserror::Error, Debug)]
+pub enum SmpTransportError {
     #[error("unexpected frame")]
     UnexpectedFrame,
     #[error("unknown frame start: {0:?}")]
@@ -24,19 +23,19 @@ pub enum SMPTransportError {
     Base64DecodeError(#[from] base64::DecodeError),
 }
 
-pub struct SMPTransportDecoder {
+pub struct SmpTransportDecoder {
     /// length + 2 bytes CRC
     content_length: u16,
     buf: Vec<u8>,
 }
 
-impl Default for SMPTransportDecoder {
+impl Default for SmpTransportDecoder {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl SMPTransportDecoder {
+impl SmpTransportDecoder {
     pub fn new() -> Self {
         Self {
             content_length: 0,
@@ -45,14 +44,14 @@ impl SMPTransportDecoder {
     }
 
     /// attempt to parse a packet from the input buffer and return whether the frame is complete
-    pub fn input_line(&mut self, input: &[u8]) -> Result<bool, SMPTransportError> {
+    pub fn input_line(&mut self, input: &[u8]) -> Result<bool, SmpTransportError> {
         let start = (input[0], input[1]);
         let base64_packet = general_purpose::STANDARD.decode(&input[2..input.len() - 1])?;
 
         let packet_body = match start {
             (0x06, 0x09) => {
                 if self.content_length > 0 {
-                    return Err(SMPTransportError::UnexpectedFrame);
+                    return Err(SmpTransportError::UnexpectedFrame);
                 }
 
                 self.content_length = u16::from_be_bytes([base64_packet[0], base64_packet[1]]);
@@ -61,16 +60,16 @@ impl SMPTransportDecoder {
             }
             (0x04, 0x14) => {
                 if self.content_length == 0 {
-                    return Err(SMPTransportError::UnexpectedFrame);
+                    return Err(SmpTransportError::UnexpectedFrame);
                 }
                 &base64_packet
             }
-            (a, b) => return Err(SMPTransportError::UnknownFrameStart([a, b])),
+            (a, b) => return Err(SmpTransportError::UnknownFrameStart([a, b])),
         };
 
         let total_len = self.buf.len() + packet_body.len();
         if total_len > self.content_length as usize {
-            return Err(SMPTransportError::PacketLength(
+            return Err(SmpTransportError::PacketLength(
                 self.content_length,
                 total_len,
             ));
@@ -85,9 +84,9 @@ impl SMPTransportDecoder {
         self.content_length != 0 && self.content_length as usize >= self.buf.len()
     }
 
-    pub fn into_frame_payload(self) -> Result<Vec<u8>, SMPTransportError> {
+    pub fn into_frame_payload(self) -> Result<Vec<u8>, SmpTransportError> {
         if self.buf.len() < 2 || self.buf.len() != self.content_length as usize {
-            return Err(SMPTransportError::PacketLength(
+            return Err(SmpTransportError::PacketLength(
                 self.content_length,
                 self.buf.len(),
             ));
@@ -102,19 +101,19 @@ impl SMPTransportDecoder {
         let crc_result = digest.finalize();
 
         if crc != crc_result {
-            return Err(SMPTransportError::CRCError);
+            return Err(SmpTransportError::CRCError);
         }
 
         Ok(body)
     }
 }
 
-pub struct SMPTransportEncoder<'a> {
+pub struct SmpTransportEncoder<'a> {
     written_len: usize,
     payload: &'a [u8],
 }
 
-impl<'a> SMPTransportEncoder<'a> {
+impl<'a> SmpTransportEncoder<'a> {
     pub fn new(payload: &'a [u8]) -> Self {
         Self {
             written_len: 0,

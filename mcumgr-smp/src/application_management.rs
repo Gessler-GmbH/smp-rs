@@ -1,7 +1,7 @@
 // Author: Sascha Zenglein <zenglein@gessler.de>
 // Copyright (c) 2023 Gessler GmbH.
 
-use crate::{Group, OpCode, SMPFrame};
+use crate::{Group, OpCode, SmpFrame};
 
 use serde::{Deserialize, Serialize};
 
@@ -64,8 +64,8 @@ pub struct ImageState {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GetStatePayload {}
 
-pub fn get_state(sequence: u8) -> SMPFrame<GetStatePayload> {
-    SMPFrame {
+pub fn get_state(sequence: u8) -> SmpFrame<GetStatePayload> {
+    SmpFrame {
         operation: OpCode::ReadRequest,
         flags: 0,
         group: Group::ApplicationManagement,
@@ -82,10 +82,10 @@ pub struct SetStatePayload {
     pub confirm: bool,
 }
 
-pub fn set_state(hash: Vec<u8>, confirm: bool, sequence: u8) -> SMPFrame<SetStatePayload> {
+pub fn set_state(hash: Vec<u8>, confirm: bool, sequence: u8) -> SmpFrame<SetStatePayload> {
     let data = SetStatePayload { hash, confirm };
 
-    SMPFrame {
+    SmpFrame {
         operation: OpCode::WriteRequest,
         flags: 0,
         group: Group::ApplicationManagement,
@@ -128,7 +128,7 @@ impl<'s> ImageWriter<'s> {
         }
     }
 
-    pub fn write_chunk<'d>(&mut self, data: &'d [u8]) -> SMPFrame<ImageChunk<'d, 's>> {
+    pub fn write_chunk<'d>(&mut self, data: &'d [u8]) -> SmpFrame<ImageChunk<'d, 's>> {
         let data_len = data.len();
 
         let mut chunk_data = ImageChunk {
@@ -155,7 +155,7 @@ impl<'s> ImageWriter<'s> {
 
         (self.sequence, _) = self.sequence.overflowing_add(1);
 
-        SMPFrame::new(
+        SmpFrame::new(
             OpCode::WriteRequest,
             self.sequence,
             Group::ApplicationManagement,

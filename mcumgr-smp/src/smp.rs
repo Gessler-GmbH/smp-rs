@@ -4,7 +4,7 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum SMPError {
+pub enum SmpError {
     #[error("payload decoding error: {0}")]
     PayloadDecodingError(#[from] Box<dyn std::error::Error>),
     #[error("smp frame decoding error")]
@@ -92,7 +92,7 @@ pub enum ReturnCode {
 /// Definitition of a single SMP message.  
 /// SMP Requests and Responses always have this format.
 #[derive(Debug, Clone)]
-pub struct SMPFrame<T> {
+pub struct SmpFrame<T> {
     pub operation: OpCode,
     pub flags: u8,
     pub group: Group,
@@ -101,7 +101,7 @@ pub struct SMPFrame<T> {
     pub data: T,
 }
 
-impl<T> SMPFrame<T> {
+impl<T> SmpFrame<T> {
     ///  Create new with default flags
     pub fn new(operation: OpCode, sequence: u8, group: Group, command: u8, payload: T) -> Self {
         Self {
@@ -115,9 +115,9 @@ impl<T> SMPFrame<T> {
     }
 }
 
-impl<T> SMPFrame<T> {
+impl<T> SmpFrame<T> {
     /// Encode the frame to bytes using the given encode_payload handler.  
-    /// For the common CBOR serialisation, see [SMPFrame::encode_with_cbor]
+    /// For the common CBOR serialisation, see [SmpFrame::encode_with_cbor]
     pub fn encode<E, R: AsRef<[u8]>>(
         &self,
         encode_payload: impl FnOnce(&T) -> Result<R, E>,
@@ -141,13 +141,13 @@ impl<T> SMPFrame<T> {
     }
 
     /// Decode the frame from bytes using the given decode_payload handler.  
-    /// For the common CBOR serialisation, see [SMPFrame::decode_with_cbor]
+    /// For the common CBOR serialisation, see [SmpFrame::decode_with_cbor]
     pub fn decode(
         buf: &[u8],
         decode_payload: impl FnOnce(&[u8]) -> Result<T, Box<dyn std::error::Error>>,
-    ) -> Result<SMPFrame<T>, SMPError> {
+    ) -> Result<SmpFrame<T>, SmpError> {
         if buf.len() < 8 {
-            return Err(SMPError::InvalidFrame);
+            return Err(SmpError::InvalidFrame);
         }
 
         let operation = OpCode::from(buf[0] & 0x07);
@@ -158,18 +158,18 @@ impl<T> SMPFrame<T> {
         let command = buf[7];
 
         if buf.len() < (8 + data_len) as usize {
-            return Err(SMPError::InvalidFrame);
+            return Err(SmpError::InvalidFrame);
         }
 
         let data_buf = &buf[8..(8 + data_len as usize)];
         let data = decode_payload(data_buf)?;
 
-        Ok(SMPFrame::new(operation, sequence, group, command, data))
+        Ok(SmpFrame::new(operation, sequence, group, command, data))
     }
 }
 
 #[cfg(feature = "payload-cbor")]
-impl<T: serde::Serialize> SMPFrame<T> {
+impl<T: serde::Serialize> SmpFrame<T> {
     /// Encode the frame to bytes using CBOR serialization.  
     /// This method requires Serde
     pub fn encode_with_cbor(&self) -> Vec<u8> {
@@ -186,10 +186,10 @@ impl<T: serde::Serialize> SMPFrame<T> {
 }
 
 #[cfg(feature = "payload-cbor")]
-impl<T: serde::de::DeserializeOwned> SMPFrame<T> {
+impl<T: serde::de::DeserializeOwned> SmpFrame<T> {
     /// Decode the frame to bytes using CBOR deserialization.  
     /// This method requires Serde
-    pub fn decode_with_cbor(buf: &[u8]) -> Result<SMPFrame<T>, SMPError> {
+    pub fn decode_with_cbor(buf: &[u8]) -> Result<SmpFrame<T>, SmpError> {
         Self::decode(buf, |buf| {
             let x: T = ciborium::de::from_reader(buf)?;
             Ok(x)

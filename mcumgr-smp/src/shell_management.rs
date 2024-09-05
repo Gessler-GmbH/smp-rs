@@ -1,6 +1,6 @@
 // Author: Sascha Zenglein <zenglein@gessler.de>
 // Copyright (c) 2023 Gessler GmbH.
-use crate::{Group, SMPFrame};
+use crate::{Group, SmpFrame};
 
 use crate::OpCode::WriteRequest;
 use serde::{Deserialize, Serialize};
@@ -27,8 +27,8 @@ impl ShellResult {
     }
 }
 
-pub fn shell_command(sequence: u8, command_args: Vec<String>) -> SMPFrame<ShellCommand> {
+pub fn shell_command(sequence: u8, command_args: Vec<String>) -> SmpFrame<ShellCommand> {
     let payload = ShellCommand { argv: command_args };
 
-    SMPFrame::new(WriteRequest, sequence, Group::ShellManagement, 0, payload)
+    SmpFrame::new(WriteRequest, sequence, Group::ShellManagement, 0, payload)
 }

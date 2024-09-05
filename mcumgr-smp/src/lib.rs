@@ -9,7 +9,7 @@
 //! Apart from [smp_framing], messages are encoded and decoded from and to raw byte buffers.
 //! You must provide your own transport implementation.
 
-/// Implementation of a general [SMPFrame] that can have any payload.
+/// Implementation of a general [SmpFrame] that can have any payload.
 pub mod smp;
 
 #[cfg(feature = "payload-cbor")]
@@ -19,8 +19,7 @@ pub mod os_management;
 #[cfg(feature = "payload-cbor")]
 pub mod shell_management;
 
-/// Support for the [SMP text console transport](https://github.com/apache/mynewt-mcumgr/blob/master/transport/smp-console.md)
-#[cfg(feature = "serial")]
-pub mod smp_framing;
+/// Implementations over Serial, BLE and UDP transports
+pub mod transport;
 
 pub use smp::*;
