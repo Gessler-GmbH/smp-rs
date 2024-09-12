@@ -1,13 +1,20 @@
 // Author: Sascha Zenglein <zenglein@gessler.de>
-// Copyright (c) 2023 Gessler GmbH.
+// Copyright (c) 2024 Gessler GmbH.
 
 //! A library that implements the SMP protocol.
 //!
 //! This library aims to be compatible with the Zepyhr SMP implementation.
 //! For more information, see <https://docs.zephyrproject.org/3.1.0/services/device_mgmt/smp_protocol.html>
 //!
-//! Apart from [smp_framing], messages are encoded and decoded from and to raw byte buffers.
-//! You must provide your own transport implementation.
+//! # Transport
+//! A transport implementation is provided for a number of different transports. Both
+//! sync and async versions exist, but due to implementation effort and available crates
+//! this varies for each transport type.  
+//! See the [transport] module for more information.
+//!
+//! #### Bring your own transport
+//! [SmpFrame] is implemented in such a way that it uses raw bytes (i.e. [Vec]) to encode or decode
+//! messages. You can handle this conversion yourself and send these bytes over any channel.
 
 /// Implementation of a general [SmpFrame] that can have any payload.
 pub mod smp;

@@ -18,4 +18,4 @@ Additionally, you can take a look at the smp-tool code for how to use the librar
 This project is dual-licensed under 
 [MIT](./LICENSE-MIT) and [Apache-2](LICENSE-APACHE)
 licenses.  
-Copyright (c) 2023 Gessler GmbH.
+Copyright (c) 2024 Gessler GmbH.

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+- Updated documentation to include info on the now included transports
+
 ## [0.7.0] - 2024-09-05
 
 This update has been driven by @aectaan with the primary

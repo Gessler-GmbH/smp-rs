@@ -32,4 +32,4 @@ smp-tool -t serial -s /dev/ttyACM0 shell interactive
 
 
 
-Copyright (c) 2023 Gessler GmbH.
+Copyright (c) 2024 Gessler GmbH.

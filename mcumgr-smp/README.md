@@ -11,7 +11,8 @@ Feel free to contribute additional message definitions.
 **Custom messages are fully supported by creating SmpFrames manually.
 You can even use a payload encoding other than CBOR.**
 
-By default it include all available transport. If you don't need them all, disable default features
+A transport implementation for UDP, Serial and Bluetooth is provided.   
+By default, all available transport features are enabled. If you don't need them all, disable default features
 and enable the needed one.
 
 ## Example
@@ -44,4 +45,4 @@ let smp_frame = SmpFrame::new(
 
 
 
-Copyright (c) 2023 Gessler GmbH.
+Copyright (c) 2024 Gessler GmbH.
