@@ -34,7 +34,7 @@ pub async fn shell(transport: &mut UsedTransport) -> Result<(), Box<dyn Error>> 
                 let argv: Vec<_> = buffer.split_whitespace().map(|s| s.to_owned()).collect();
 
                 let ret: Result<SmpFrame<ShellResult>, _> = transport
-                    .transceive_cbor(shell_management::shell_command(42, argv))
+                    .transceive_cbor(shell_management::shell_command(42, argv), 0)
                     .await;
                 debug!("{:?}", ret);
 

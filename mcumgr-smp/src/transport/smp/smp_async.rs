@@ -35,7 +35,7 @@ pub mod cbor {
 
         pub async fn send_cbor<T: serde::Serialize>(
             &mut self,
-            frame: SmpFrame<T>,
+            frame: &SmpFrame<T>,
         ) -> Result<(), Error> {
             let bytes = frame.encode_with_cbor();
             self.send(bytes).await
@@ -50,7 +50,7 @@ pub mod cbor {
 
         pub async fn transceive_cbor<Req: serde::Serialize, Resp: serde::de::DeserializeOwned>(
             &mut self,
-            frame: SmpFrame<Req>,
+            frame: &SmpFrame<Req>,
         ) -> Result<SmpFrame<Resp>, Error> {
             self.send_cbor(frame).await?;
             self.receive_cbor().await

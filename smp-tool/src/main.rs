@@ -57,11 +57,14 @@ struct Cli {
     #[arg(short = 'p', long, default_value_t = 1337)]
     udp_port: u16,
 
-    #[arg(long, default_value = "5000")]
+    #[arg(long, default_value_t = 5000)]
     timeout_ms: u64,
 
     #[arg(short, long, required_if_eq("transport", "ble"))]
     name: Option<String>,
+
+    #[arg(long, default_value_t = 4)]
+    retries: u8,
 
     #[command(subcommand)]
     command: Commands,
@@ -124,10 +127,23 @@ impl UsedTransport {
     pub async fn transceive_cbor<Req: serde::Serialize, Resp: serde::de::DeserializeOwned>(
         &mut self,
         frame: SmpFrame<Req>,
+        retries: u8,
     ) -> Result<SmpFrame<Resp>, mcumgr_smp::transport::error::Error> {
-        match self {
-            UsedTransport::SyncTransport(ref mut t) => t.transceive_cbor(frame),
-            UsedTransport::AsyncTransport(ref mut t) => t.transceive_cbor(frame).await,
+        let mut attempts = 0;
+        loop {
+            let result = match self {
+                UsedTransport::SyncTransport(ref mut t) => t.transceive_cbor(&frame),
+                UsedTransport::AsyncTransport(ref mut t) => t.transceive_cbor(&frame).await,
+            };
+
+            if result.is_ok() {
+                break result;
+            }
+
+            attempts += 1;
+            if attempts > retries {
+                break result;
+            }
         }
     }
 }
@@ -183,7 +199,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     match cli.command {
         Commands::Os(OsCmd::Echo { msg }) => {
             let ret: SmpFrame<EchoResult> = transport
-                .transceive_cbor(os_management::echo(42, msg))
+                .transceive_cbor(os_management::echo(42, msg), 0)
                 .await?;
             debug!("{:?}", ret);
 
@@ -198,7 +214,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Commands::Shell(ShellCmd::Exec { cmd }) => {
             let ret: SmpFrame<ShellResult> = transport
-                .transceive_cbor(shell_management::shell_command(42, cmd))
+                .transceive_cbor(shell_management::shell_command(42, cmd), 0)
                 .await?;
             debug!("{:?}", ret);
 
@@ -241,7 +257,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 let chunk = &firmware[offset..min(firmware.len(), offset + chunk_size)];
 
                 let resp_frame: SmpFrame<WriteImageChunkResult> = transport
-                    .transceive_cbor(updater.write_chunk(chunk))
+                    .transceive_cbor(updater.write_chunk(chunk), cli.retries)
                     .await?;
 
                 match resp_frame.data {
@@ -259,7 +275,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Commands::App(ApplicationCmd::Info) => {
             let ret: SmpFrame<GetImageStateResult> = transport
-                .transceive_cbor(application_management::get_state(42))
+                .transceive_cbor(application_management::get_state(42), cli.retries)
                 .await?;
             debug!("{:?}", ret);
 
