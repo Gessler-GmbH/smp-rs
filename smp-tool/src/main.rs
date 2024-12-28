@@ -305,6 +305,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
                 GetImageStateResult::Err(err) => {
                     eprintln!("rc: {}", err.rc);
+                    if let Some(msg) = err.rsn {
+                        eprintln!("rsn: {:?}", msg);
+                    }
                 }
             }
         }

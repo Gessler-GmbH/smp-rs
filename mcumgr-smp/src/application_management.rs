@@ -40,6 +40,8 @@ pub struct GetImageStatePayload {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GetImageStateError {
     pub rc: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rsn: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -192,4 +194,6 @@ pub struct WriteImageChunkPayload {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WriteImageChunkError {
     pub rc: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rsn: Option<String>,
 }
