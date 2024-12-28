@@ -184,6 +184,9 @@ pub enum WriteImageChunkResult {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WriteImageChunkPayload {
     pub off: u32,
+    #[serde(rename = "match")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub match_: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

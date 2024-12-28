@@ -115,6 +115,8 @@ enum ApplicationCmd {
         /// Only allow newer firmware versions
         #[arg(long)]
         upgrade: bool,
+        #[arg(long)]
+        verify: bool,
     },
 }
 
@@ -235,6 +237,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             update_file,
             chunk_size,
             upgrade,
+            verify,
         }) => {
             let firmware = std::fs::read(&update_file)?;
 
@@ -251,6 +254,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 upgrade,
             );
 
+            let mut verified = None;
+
             let mut offset = 0;
             while offset < firmware.len() {
                 println!("writing {}/{}", offset, firmware.len());
@@ -264,14 +269,29 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     WriteImageChunkResult::Ok(payload) => {
                         offset = payload.off as usize;
                         updater.offset = offset;
+                        verified = payload.match_;
                     }
                     WriteImageChunkResult::Err(err) => {
-                        Err(format!("Err from MCU: {:?}", err).to_string())?
+                        Err(format!("Err from MCU: {:?}", err))?;
                     }
                 }
             }
 
             println!("sent all bytes: {}", offset);
+
+            match verified {
+                Some(true) => {
+                    println!("Image verified");
+                }
+                Some(false) => Err("Image verification failed!".to_string())?,
+                None => {
+                    if verify {
+                        Err("Device did not deliver verification data".to_string())?
+                    } else {
+                        println!("No image verification data available.");
+                    }
+                }
+            }
         }
         Commands::App(ApplicationCmd::Info) => {
             let ret: SmpFrame<GetImageStateResult> = transport
