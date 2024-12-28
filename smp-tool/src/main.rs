@@ -109,6 +109,8 @@ enum ApplicationCmd {
         update_file: PathBuf,
         #[arg(short, long, default_value_t = 512)]
         chunk_size: usize,
+        #[arg(long)]
+        upgrade: bool,
     },
 }
 
@@ -215,6 +217,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             slot,
             update_file,
             chunk_size,
+            upgrade,
         }) => {
             let firmware = std::fs::read(&update_file)?;
 
@@ -228,6 +231,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 slot,
                 firmware.len(),
                 Some(&hash),
+                upgrade,
             );
 
             let mut offset = 0;
