@@ -117,8 +117,8 @@ pub struct ImageWriter<'s> {
     pub sequence: u8,
 }
 
-impl<'s> ImageWriter<'s> {
-    pub fn new(image: Option<u8>, len: usize, hash: Option<&'s [u8]>) -> ImageWriter {
+impl ImageWriter<'_> {
+    pub fn new(image: Option<u8>, len: usize, hash: Option<&[u8]>) -> ImageWriter {
         ImageWriter {
             image,
             hash,
@@ -128,7 +128,7 @@ impl<'s> ImageWriter<'s> {
         }
     }
 
-    pub fn write_chunk<'d>(&mut self, data: &'d [u8]) -> SmpFrame<ImageChunk<'d, 's>> {
+    pub fn write_chunk<'d>(&mut self, data: &'d [u8]) -> SmpFrame<ImageChunk<'d, '_>> {
         let data_len = data.len();
 
         let mut chunk_data = ImageChunk {

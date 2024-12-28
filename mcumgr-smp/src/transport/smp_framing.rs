@@ -81,7 +81,7 @@ impl SmpTransportDecoder {
     }
 
     pub fn is_complete(&self) -> bool {
-        self.content_length != 0 && self.content_length as usize >= self.buf.len()
+        self.content_length != 0 && self.buf.len() >= self.content_length as usize
     }
 
     pub fn into_frame_payload(self) -> Result<Vec<u8>, SmpTransportError> {
