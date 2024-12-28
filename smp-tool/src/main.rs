@@ -103,12 +103,13 @@ enum ApplicationCmd {
     // },
     /// Flash a firmware to an image slot
     Flash {
+        #[arg()]
+        update_file: PathBuf,
         #[arg(short, long)]
         slot: Option<u8>,
-        #[arg(short, long)]
-        update_file: PathBuf,
-        #[arg(short, long, default_value_t = 512)]
+        #[arg(short, long, default_value_t = 256)]
         chunk_size: usize,
+        /// Only allow newer firmware versions
         #[arg(long)]
         upgrade: bool,
     },
