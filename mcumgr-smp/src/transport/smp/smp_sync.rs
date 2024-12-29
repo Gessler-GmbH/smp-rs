@@ -37,9 +37,13 @@ pub mod cbor {
         }
         pub fn receive_cbor<T: serde::de::DeserializeOwned>(
             &mut self,
+            sequence: u8,
         ) -> Result<SmpFrame<T>, Error> {
             let bytes = self.receive()?;
             let frame = SmpFrame::<T>::decode_with_cbor(&bytes)?;
+            if frame.sequence != sequence {
+                Err(Error::Smp(crate::SmpError::UnexpectedSeq))?;
+            }
             Ok(frame)
         }
 
@@ -48,7 +52,7 @@ pub mod cbor {
             frame: &SmpFrame<Req>,
         ) -> Result<SmpFrame<Resp>, Error> {
             self.send_cbor(frame)?;
-            self.receive_cbor()
+            self.receive_cbor(frame.sequence)
         }
     }
 }
