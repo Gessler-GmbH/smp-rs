@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add [`upgrade`](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_1.html#image-upload-request) flag to image upload request
 - Add parsing of [`rsn`](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_1.html#image-upload-response) error string fields where applicable
 - Add parsing of [`match`](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_1.html#image-upload-response) field of image upload response, for on-device checksum verification
+- Add optional check for correct sequence number in `receive_cbor`/`transceive_cbor` functions
 
 ### Changed
 - Updated documentation to include info on the now included transports

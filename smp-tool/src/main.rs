@@ -128,8 +128,8 @@ impl UsedTransport {
         frame: SmpFrame<Req>,
     ) -> Result<SmpFrame<Resp>, mcumgr_smp::transport::error::Error> {
         match self {
-            UsedTransport::SyncTransport(ref mut t) => t.transceive_cbor(&frame),
-            UsedTransport::AsyncTransport(ref mut t) => t.transceive_cbor(&frame).await,
+            UsedTransport::SyncTransport(ref mut t) => t.transceive_cbor(&frame, false),
+            UsedTransport::AsyncTransport(ref mut t) => t.transceive_cbor(&frame, false).await,
         }
     }
 }
