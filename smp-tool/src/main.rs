@@ -57,7 +57,7 @@ struct Cli {
     #[arg(short = 'p', long, default_value_t = 1337)]
     udp_port: u16,
 
-    #[arg(long, default_value = "5000")]
+    #[arg(long, default_value_t = 5000)]
     timeout_ms: u64,
 
     #[arg(short, long, required_if_eq("transport", "ble"))]
@@ -103,12 +103,17 @@ enum ApplicationCmd {
     // },
     /// Flash a firmware to an image slot
     Flash {
+        #[arg()]
+        update_file: PathBuf,
         #[arg(short, long)]
         slot: Option<u8>,
-        #[arg(short, long)]
-        update_file: PathBuf,
-        #[arg(short, long, default_value_t = 512)]
+        #[arg(short, long, default_value_t = 256)]
         chunk_size: usize,
+        /// Only allow newer firmware versions
+        #[arg(long)]
+        upgrade: bool,
+        #[arg(long)]
+        verify: bool,
     },
 }
 
@@ -123,8 +128,8 @@ impl UsedTransport {
         frame: SmpFrame<Req>,
     ) -> Result<SmpFrame<Resp>, mcumgr_smp::transport::error::Error> {
         match self {
-            UsedTransport::SyncTransport(ref mut t) => t.transceive_cbor(frame),
-            UsedTransport::AsyncTransport(ref mut t) => t.transceive_cbor(frame).await,
+            UsedTransport::SyncTransport(ref mut t) => t.transceive_cbor(&frame, false),
+            UsedTransport::AsyncTransport(ref mut t) => t.transceive_cbor(&frame, false).await,
         }
     }
 }
@@ -215,6 +220,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             slot,
             update_file,
             chunk_size,
+            upgrade,
+            verify,
         }) => {
             let firmware = std::fs::read(&update_file)?;
 
@@ -228,7 +235,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 slot,
                 firmware.len(),
                 Some(&hash),
+                upgrade,
             );
+
+            let mut verified = None;
 
             let mut offset = 0;
             while offset < firmware.len() {
@@ -243,14 +253,29 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     WriteImageChunkResult::Ok(payload) => {
                         offset = payload.off as usize;
                         updater.offset = offset;
+                        verified = payload.match_;
                     }
                     WriteImageChunkResult::Err(err) => {
-                        Err(format!("Err from MCU: {:?}", err).to_string())?
+                        Err(format!("Err from MCU: {:?}", err))?;
                     }
                 }
             }
 
             println!("sent all bytes: {}", offset);
+
+            match verified {
+                Some(true) => {
+                    println!("Image verified");
+                }
+                Some(false) => Err("Image verification failed!".to_string())?,
+                None => {
+                    if verify {
+                        Err("Device did not deliver verification data".to_string())?
+                    } else {
+                        println!("No image verification data available.");
+                    }
+                }
+            }
         }
         Commands::App(ApplicationCmd::Info) => {
             let ret: SmpFrame<GetImageStateResult> = transport
@@ -264,6 +289,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
                 GetImageStateResult::Err(err) => {
                     eprintln!("rc: {}", err.rc);
+                    if let Some(msg) = err.rsn {
+                        eprintln!("rsn: {:?}", msg);
+                    }
                 }
             }
         }

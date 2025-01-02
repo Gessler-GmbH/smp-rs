@@ -40,6 +40,8 @@ pub struct GetImageStatePayload {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GetImageStateError {
     pub rc: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rsn: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -107,6 +109,8 @@ pub struct ImageChunk<'d, 's> {
     #[serde(with = "serde_bytes")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sha: Option<&'s [u8]>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub upgrade: Option<bool>,
 }
 
 pub struct ImageWriter<'s> {
@@ -115,16 +119,18 @@ pub struct ImageWriter<'s> {
     pub offset: usize,
     pub len: usize,
     pub sequence: u8,
+    pub upgrade: bool,
 }
 
 impl ImageWriter<'_> {
-    pub fn new(image: Option<u8>, len: usize, hash: Option<&[u8]>) -> ImageWriter {
+    pub fn new(image: Option<u8>, len: usize, hash: Option<&[u8]>, upgrade: bool) -> ImageWriter {
         ImageWriter {
             image,
             hash,
             offset: 0,
             len,
             sequence: 0,
+            upgrade,
         }
     }
 
@@ -137,6 +143,7 @@ impl ImageWriter<'_> {
             image: None,
             len: None,
             sha: None,
+            upgrade: None,
         };
 
         if self.offset == 0 {
@@ -148,6 +155,10 @@ impl ImageWriter<'_> {
 
             if let Some(hash) = self.hash {
                 chunk_data.sha = Some(hash);
+            }
+
+            if self.upgrade {
+                chunk_data.upgrade = Some(true);
             }
         }
 
@@ -175,9 +186,14 @@ pub enum WriteImageChunkResult {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WriteImageChunkPayload {
     pub off: u32,
+    #[serde(rename = "match")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub match_: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WriteImageChunkError {
     pub rc: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rsn: Option<String>,
 }
