@@ -9,8 +9,6 @@ pub enum SmpError {
     PayloadDecodingError(#[from] Box<dyn std::error::Error>),
     #[error("smp frame decoding error")]
     InvalidFrame,
-    #[error("unexpected sequence number")]
-    UnexpectedSeq,
 }
 
 #[derive(Debug, Clone, Copy)]
