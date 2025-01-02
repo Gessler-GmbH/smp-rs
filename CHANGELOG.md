@@ -7,8 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+- Add [`upgrade`](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_1.html#image-upload-request) flag to image upload request
+- Add parsing of [`rsn`](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_1.html#image-upload-response) error string fields where applicable
+- Add parsing of [`match`](https://docs.zephyrproject.org/latest/services/device_mgmt/smp_groups/smp_group_1.html#image-upload-response) field of image upload response, for on-device checksum verification
+
 ### Changed
 - Updated documentation to include info on the now included transports
+- Reduce default chunk size to `256` to match Zephyr's default
+- Take request data in `send_cbor` and `transceive_cbor` as reference, which allows users to implement a retry mechanism
+
+### Fixed
+- Fix broken messages after merging of multi-chunk responses
 
 ## [0.7.0] - 2024-09-05
 
