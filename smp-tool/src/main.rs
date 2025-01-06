@@ -112,8 +112,6 @@ enum ApplicationCmd {
         /// Only allow newer firmware versions
         #[arg(long)]
         upgrade: bool,
-        #[arg(long)]
-        verify: bool,
     },
 }
 
@@ -221,7 +219,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
             update_file,
             chunk_size,
             upgrade,
-            verify,
         }) => {
             let firmware = std::fs::read(&update_file)?;
 
@@ -263,17 +260,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             println!("sent all bytes: {}", offset);
 
-            match verified {
-                Some(true) => {
+            if let Some(verified) = verified {
+                if verified {
                     println!("Image verified");
-                }
-                Some(false) => Err("Image verification failed!".to_string())?,
-                None => {
-                    if verify {
-                        Err("Device did not deliver verification data".to_string())?
-                    } else {
-                        println!("No image verification data available.");
-                    }
+                } else {
+                    eprintln!("Image verification failed!");
                 }
             }
         }
