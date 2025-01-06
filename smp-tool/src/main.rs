@@ -226,7 +226,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             hasher.update(&firmware);
             let hash = hasher.finalize();
 
-            debug!("Image sha256: {:02X?}", hash);
+            println!("Image sha256: {:x}", hash);
 
             let mut updater = mcumgr_smp::application_management::ImageWriter::new(
                 slot,
