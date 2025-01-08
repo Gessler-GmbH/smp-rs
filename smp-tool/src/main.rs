@@ -57,7 +57,7 @@ struct Cli {
     #[arg(short = 'p', long, default_value_t = 1337)]
     udp_port: u16,
 
-    #[arg(long, default_value = "5000")]
+    #[arg(long, default_value_t = 5000)]
     timeout_ms: u64,
 
     #[arg(short, long, required_if_eq("transport", "ble"))]
@@ -103,12 +103,15 @@ enum ApplicationCmd {
     // },
     /// Flash a firmware to an image slot
     Flash {
+        #[arg()]
+        update_file: PathBuf,
         #[arg(short, long)]
         slot: Option<u8>,
-        #[arg(short, long)]
-        update_file: PathBuf,
-        #[arg(short, long, default_value_t = 512)]
+        #[arg(short, long, default_value_t = 256)]
         chunk_size: usize,
+        /// Only allow newer firmware versions
+        #[arg(long)]
+        upgrade: bool,
     },
 }
 
@@ -120,11 +123,11 @@ pub enum UsedTransport {
 impl UsedTransport {
     pub async fn transceive_cbor<Req: serde::Serialize, Resp: serde::de::DeserializeOwned>(
         &mut self,
-        frame: SmpFrame<Req>,
+        frame: &SmpFrame<Req>,
     ) -> Result<SmpFrame<Resp>, mcumgr_smp::transport::error::Error> {
         match self {
-            UsedTransport::SyncTransport(ref mut t) => t.transceive_cbor(frame),
-            UsedTransport::AsyncTransport(ref mut t) => t.transceive_cbor(frame).await,
+            UsedTransport::SyncTransport(ref mut t) => t.transceive_cbor(frame, false),
+            UsedTransport::AsyncTransport(ref mut t) => t.transceive_cbor(frame, false).await,
         }
     }
 }
@@ -180,7 +183,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     match cli.command {
         Commands::Os(OsCmd::Echo { msg }) => {
             let ret: SmpFrame<EchoResult> = transport
-                .transceive_cbor(os_management::echo(42, msg))
+                .transceive_cbor(&os_management::echo(42, msg))
                 .await?;
             debug!("{:?}", ret);
 
@@ -195,7 +198,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Commands::Shell(ShellCmd::Exec { cmd }) => {
             let ret: SmpFrame<ShellResult> = transport
-                .transceive_cbor(shell_management::shell_command(42, cmd))
+                .transceive_cbor(&shell_management::shell_command(42, cmd))
                 .await?;
             debug!("{:?}", ret);
 
@@ -215,6 +218,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             slot,
             update_file,
             chunk_size,
+            upgrade,
         }) => {
             let firmware = std::fs::read(&update_file)?;
 
@@ -222,13 +226,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
             hasher.update(&firmware);
             let hash = hasher.finalize();
 
-            debug!("Image sha256: {:02X?}", hash);
+            println!("Image sha256: {:x}", hash);
 
             let mut updater = mcumgr_smp::application_management::ImageWriter::new(
                 slot,
                 firmware.len(),
                 Some(&hash),
+                upgrade,
             );
+
+            let mut verified = None;
 
             let mut offset = 0;
             while offset < firmware.len() {
@@ -236,25 +243,34 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 let chunk = &firmware[offset..min(firmware.len(), offset + chunk_size)];
 
                 let resp_frame: SmpFrame<WriteImageChunkResult> = transport
-                    .transceive_cbor(updater.write_chunk(chunk))
+                    .transceive_cbor(&updater.write_chunk(chunk))
                     .await?;
 
                 match resp_frame.data {
                     WriteImageChunkResult::Ok(payload) => {
                         offset = payload.off as usize;
                         updater.offset = offset;
+                        verified = payload.match_;
                     }
                     WriteImageChunkResult::Err(err) => {
-                        Err(format!("Err from MCU: {:?}", err).to_string())?
+                        Err(format!("Err from MCU: {:?}", err))?;
                     }
                 }
             }
 
             println!("sent all bytes: {}", offset);
+
+            if let Some(verified) = verified {
+                if verified {
+                    println!("Image verified");
+                } else {
+                    eprintln!("Image verification failed!");
+                }
+            }
         }
         Commands::App(ApplicationCmd::Info) => {
             let ret: SmpFrame<GetImageStateResult> = transport
-                .transceive_cbor(application_management::get_state(42))
+                .transceive_cbor(&application_management::get_state(42))
                 .await?;
             debug!("{:?}", ret);
 
@@ -264,6 +280,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
                 GetImageStateResult::Err(err) => {
                     eprintln!("rc: {}", err.rc);
+                    if let Some(msg) = err.rsn {
+                        eprintln!("rsn: {:?}", msg);
+                    }
                 }
             }
         }
