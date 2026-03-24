@@ -9,7 +9,7 @@ use std::time::Duration;
 use clap::{Parser, Subcommand, ValueEnum};
 use mcumgr_smp::{
     application_management::{self, GetImageStateResult, WriteImageChunkResult},
-    os_management::{self, EchoResult},
+    os_management::{self, EchoResult, ResetResult},
     shell_management::{self, ShellResult},
     smp::SmpFrame,
     transport::{
@@ -84,6 +84,11 @@ enum Commands {
 enum OsCmd {
     /// Send an SMP Echo request
     Echo { msg: String },
+    /// Send a SMP Reset request
+    Reset {
+        #[arg(short, long, default_value_t = false)]
+        force: bool,
+    },
 }
 #[derive(Subcommand, Debug)]
 enum ShellCmd {
@@ -112,6 +117,12 @@ enum ApplicationCmd {
         /// Only allow newer firmware versions
         #[arg(long)]
         upgrade: bool,
+    },
+    /// Confirm/activate an image slot (makes the image permanent after a test boot)
+    Confirm {
+        /// Image slot to confirm (0 = primary/active, 1 = secondary).
+        #[arg(short, long)]
+        slot: u8,
     },
 }
 
@@ -196,6 +207,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
         }
+        Commands::Os(OsCmd::Reset { force }) => {
+            let ret: SmpFrame<ResetResult> = transport
+                .transceive_cbor(&os_management::reset(42, force))
+                .await?;
+            debug!("{:?}", ret);
+
+            match ret.data {
+                ResetResult::Ok {} => {
+                    println!("Reset sent sucessfully");
+                }
+                ResetResult::Err { rc } => {
+                    eprintln!("rc: {}", rc);
+                }
+            }
+        }
         Commands::Shell(ShellCmd::Exec { cmd }) => {
             let ret: SmpFrame<ShellResult> = transport
                 .transceive_cbor(&shell_management::shell_command(42, cmd))
@@ -265,6 +291,40 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     println!("Image verified");
                 } else {
                     eprintln!("Image verification failed!");
+                }
+            }
+        }
+        Commands::App(ApplicationCmd::Confirm { slot }) => {
+            let tlv_hash: Vec<u8> = {
+                let state_ret: SmpFrame<GetImageStateResult> = transport
+                    .transceive_cbor(&application_management::get_state(41))
+                    .await?;
+                match state_ret.data {
+                    GetImageStateResult::Ok(ref payload) => payload
+                        .images
+                        .iter()
+                        .find(|img| img.slot == slot as i32)
+                        .map(|img| img.hash.clone())
+                        .ok_or_else(|| format!("slot {} not found in image state", slot))?,
+                    GetImageStateResult::Err(err) => {
+                        return Err(format!("get_state error rc: {}", err.rc))?;
+                    }
+                }
+            };
+
+            let set_state = application_management::set_state(tlv_hash, true, 42);
+            let ret: SmpFrame<GetImageStateResult> = transport.transceive_cbor(&set_state).await?;
+
+            match ret.data {
+                GetImageStateResult::Ok(payload) => {
+                    println!("Image confirmed: {:?}", payload);
+                }
+                GetImageStateResult::Err(err) => {
+                    eprintln!(
+                        "confirm error rc: {} ({:?})",
+                        err.rc,
+                        err.rsn.unwrap_or("".into())
+                    );
                 }
             }
         }
